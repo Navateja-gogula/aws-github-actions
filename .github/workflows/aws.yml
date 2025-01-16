@@ -8,7 +8,7 @@ on:
       - prod
 
 jobs:
-  ci_cd_pipeline:
+  build:
     runs-on: ubuntu-latest
     steps:
       # Step 1: Checkout code
@@ -29,11 +29,19 @@ jobs:
       - name: Run tests
         run: npm test -- --watchAll=false
 
-      # Step 5: Build React App
+      # Step 5: Build React app
       - name: Build React App
         run: npm run build
 
-      # Step 6: Configure AWS Credentials for deployment
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      # Step 1: Checkout code
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      # Step 2: Deploy to AWS (S3 + CloudFront example)
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v3
         with:
@@ -41,27 +49,26 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: us-east-1
 
-      # Step 7: Deploy to AWS S3
       - name: Deploy to S3
         run: |
-          aws s3 sync ./public s3://actions-aws --delete
+          aws s3 sync ./build s3://your-bucket-name --delete
 
-      # Step 8: Promote to prod branch (only if pushed to dev)
-      - name: Promote to prod branch
-        if: github.ref == 'refs/heads/dev'
+      - name: Invalidate CloudFront Cache
         run: |
-          git config --global user.name "Navateja-gogula"
-          git config --global user.email "ngogula@anergroup.com"
-          git fetch origin
+          aws cloudfront create-invalidation --distribution-id YOUR_DISTRIBUTION_ID --paths "/*"
+
+  promote-to-prod:
+    needs: deploy
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/dev'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Merge to Prod Branch
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
           git checkout prod
-          git merge --allow-unrelated-histories dev || git checkout --ours . && git add . && git commit -m "Auto-resolve merge conflicts" || git checkout --theirs . && git add . && git commit -m "Auto-resolve merge conflicts"
-          
-          # Explicit push after merging and committing resolved conflicts
+          git merge dev
           git push origin prod
-
-      # Step 9: Notify upon successful deployment (optional)
-      - name: Notify on successful deployment
-        if: github.ref == 'refs/heads/prod'
-        run: |
-          echo "Deployment to production was successful!"
-          # Example: send email or Slack notification here
