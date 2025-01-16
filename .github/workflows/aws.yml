@@ -54,7 +54,7 @@ jobs:
           git config --global user.email "ngogula@anergroup.com"
           git fetch origin
           git checkout prod
-          git merge dev
+          git merge --allow-unrelated-histories dev
           git push origin prod
 
       # Step 9: Notify upon successful deployment (optional)
