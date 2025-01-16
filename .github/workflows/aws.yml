@@ -76,8 +76,8 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: us-east-1
 
-        - name: Install Dependencies
-          run: npm install
+       - name: Install Dependencies
+         run: npm install
 
       # Step 3: Run Build Command (if build folder does not exist)
       - name: Run Build Command (if build folder does not exist)
@@ -85,7 +85,7 @@ jobs:
           if [ ! -d "build" ]; then
             npm run build
           fi
-      
+     
         
       # Step 4: Sync to S3
       - name: Sync to S3
