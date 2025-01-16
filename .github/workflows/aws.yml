@@ -62,7 +62,6 @@ jobs:
     name: Deploy React App to AWS
     runs-on: ubuntu-latest
     needs: auto-merge-to-prod
-
  
     steps:
       # Step 1: Checkout Code
