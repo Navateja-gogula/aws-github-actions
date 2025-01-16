@@ -1,4 +1,4 @@
-name: CI/CD Pipeline with Auto-Promotion  
+name: CI/CD Pipeline with Auto-Promotion
 
 on:
   push:
@@ -76,17 +76,17 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: us-east-1
 
-       - name: Install Dependencies
-         run: npm install
+      # Step 3: Install Dependencies
+      - name: Install Dependencies
+        run: npm install
 
-      # Step 3: Run Build Command (if build folder does not exist)
+      # Step 4: Run Build Command (if build folder does not exist)
       - name: Run Build Command (if build folder does not exist)
         run: |
           if [ ! -d "build" ]; then
             npm run build
           fi
-     
-        
-      # Step 4: Sync to S3
+
+      # Step 5: Sync to S3
       - name: Sync to S3
         run: aws s3 sync ./build s3://actions-aws --delete
