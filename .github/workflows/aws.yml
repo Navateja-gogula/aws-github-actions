@@ -54,7 +54,6 @@ jobs:
           git config --global user.email "ngogula@anergroup.com"
           git fetch origin
           git checkout prod
-          # Automatically resolve conflicts by choosing 'ours' (or 'theirs')
           git merge --allow-unrelated-histories dev || git checkout --ours . && git add . && git commit -m "Auto-resolve merge conflicts" || git checkout --theirs . && git add . && git commit -m "Auto-resolve merge conflicts"
           git push origin prod
 
