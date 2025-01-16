@@ -75,6 +75,13 @@ jobs:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: us-east-1
+
+      
+      - name: Run Build Command (if build folder does not exist)
+        run: |
+          if [ ! -d "build" ]; then
+            npm run build
+          fi
  
       # Step 3: Sync Build Directory to S3
       - name: Sync to S3
