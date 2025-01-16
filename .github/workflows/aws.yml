@@ -1,93 +1,82 @@
-name: CI/CD Pipeline for React App
-
+name: CI/CD Pipeline with Auto-Promotion
+ 
 on:
   push:
     branches:
       - dev
-      - prod
-
+ 
 jobs:
-  build-and-test:
+  build-test:
+    name: Build and Test React App
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/dev'  # Only run this job for the dev branch
+ 
     steps:
-      # Step 1: Checkout code
-      - name: Checkout code
+      # Step 1: Checkout Code
+      - name: Checkout Code
         uses: actions/checkout@v3
-
-      # Step 2: Set up Node.js
-      - name: Set up Node.js
+ 
+      # Step 2: Setup Node.js Environment
+      - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: "16"
-
-      # Step 3: Install dependencies
-      - name: Install dependencies
+          node-version: 16
+ 
+      # Step 3: Install Dependencies
+      - name: Install Dependencies
         run: npm install
-
-      # Step 4: Run tests
-      - name: Run tests
+ 
+      # Step 4: Run Tests
+      - name: Run Tests
         run: npm test -- --watchAll=false
-
-  deploy-to-prod:
-    needs: build-and-test  # This depends on the success of the 'build-and-test' job
+ 
+      # Step 5: Build the App
+      - name: Build App
+        run: npm run build
+ 
+  auto-merge-to-prod:
+    name: Auto-Merge to Prod
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/dev' && success()  # Only run if tests pass on the dev branch
+    needs: build-test
+    if: success()
+ 
     steps:
-      # Step 1: Checkout code
-      - name: Checkout code
+      # Step 1: Checkout Code
+      - name: Checkout Code
         uses: actions/checkout@v3
-
-      # Step 2: Set up AWS credentials for deployment
-      - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v3
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: us-east-1
-
-      # Step 3: Deploy to AWS S3 (example)
-      - name: Deploy to AWS S3
-        run: |
-          aws s3 sync ./build/ s3://actions-aws --delete
-
-  promote-to-prod:
-    needs: deploy-to-prod  # This job runs after the deploy-to-prod job
-    runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/dev' && success()  # Only run if deployment to prod is successful
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
-
-      # Step 1: Merge dev into prod
-      - name: Merge dev into prod
+ 
+      # Step 2: Configure Git User
+      - name: Configure Git User
         run: |
           git config --global user.name "Navateja-gogula"
           git config --global user.email "ngogula@anergroup.com"
+ 
+      # Step 3: Merge Dev into Prod
+      - name: Merge Dev into Prod
+        run: |
+          git fetch origin
           git checkout prod
-          git merge dev
+          git merge dev --no-edit
           git push origin prod
-
-  deploy-to-prod-from-prod:
-    needs: promote-to-prod  # This job runs after promote-to-prod
+ 
+  deploy:
+    name: Deploy React App to AWS
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/prod'  # Only run for prod branch
+    needs: auto-merge-to-prod
+    if: github.ref == 'refs/heads/prod'
+ 
     steps:
-      # Step 1: Checkout code
-      - name: Checkout code
+      # Step 1: Checkout Code
+      - name: Checkout Code
         uses: actions/checkout@v3
-
-      # Step 2: Set up AWS credentials for deployment to prod
+ 
+      # Step 2: Configure AWS Credentials
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v3
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: us-east-1
-
-      # Step 3: Deploy to AWS S3 (prod)
-      - name: Deploy to AWS S3 (prod)
-        run: |
-          aws s3 sync ./build/ s3://actions-aws --delete
-
-      
+ 
+      # Step 3: Sync Build Directory to S3
+      - name: Sync to S3
+        run: aws s3 sync ./build s3://actions-aws --delete
