@@ -4,12 +4,12 @@ on:
   push:
     branches:
       - dev
-      - test
       - prod
 
 jobs:
-  build:
+  build-and-test:
     runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/dev'  # Only run this job for the dev branch
     steps:
       # Step 1: Checkout code
       - name: Checkout code
@@ -29,19 +29,16 @@ jobs:
       - name: Run tests
         run: npm test -- --watchAll=false
 
-      # Step 5: Build React app
-      - name: Build React App
-        run: npm run build
-
-  deploy:
-    needs: build
+  deploy-to-prod:
+    needs: build-and-test  # This depends on the success of the 'build-and-test' job
     runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/dev' && success()  # Only run if tests pass on the dev branch
     steps:
       # Step 1: Checkout code
       - name: Checkout code
         uses: actions/checkout@v3
 
-      # Step 2: Deploy to AWS (S3 + CloudFront example)
+      # Step 2: Set up AWS credentials for deployment
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v3
         with:
@@ -49,22 +46,48 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: us-east-1
 
-      - name: Deploy to S3
+      # Step 3: Deploy to AWS S3 (example)
+      - name: Deploy to AWS S3
         run: |
-          aws s3 sync ./public s3://actions-aws --delete
+          aws s3 sync ./build/ s3://actions-aws --delete
 
   promote-to-prod:
-    needs: deploy
+    needs: deploy-to-prod  # This job runs after the deploy-to-prod job
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/dev'
+    if: github.ref == 'refs/heads/dev' && success()  # Only run if deployment to prod is successful
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Merge to Prod Branch
+      # Step 1: Merge dev into prod
+      - name: Merge dev into prod
         run: |
           git config --global user.name "Navateja-gogula"
           git config --global user.email "ngogula@anergroup.com"
           git checkout prod
           git merge dev
           git push origin prod
+
+  deploy-to-prod-from-prod:
+    needs: promote-to-prod  # This job runs after promote-to-prod
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/prod'  # Only run for prod branch
+    steps:
+      # Step 1: Checkout code
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      # Step 2: Set up AWS credentials for deployment to prod
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v3
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
+
+      # Step 3: Deploy to AWS S3 (prod)
+      - name: Deploy to AWS S3 (prod)
+        run: |
+          aws s3 sync ./build/ s3://actions-aws --delete
+
+      
