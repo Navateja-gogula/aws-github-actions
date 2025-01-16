@@ -55,6 +55,8 @@ jobs:
           git fetch origin
           git checkout prod
           git merge --allow-unrelated-histories dev || git checkout --ours . && git add . && git commit -m "Auto-resolve merge conflicts" || git checkout --theirs . && git add . && git commit -m "Auto-resolve merge conflicts"
+          
+          # Explicit push after merging and committing resolved conflicts
           git push origin prod
 
       # Step 9: Notify upon successful deployment (optional)
