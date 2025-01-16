@@ -62,7 +62,7 @@ jobs:
     name: Deploy React App to AWS
     runs-on: ubuntu-latest
     needs: auto-merge-to-prod
-    if: github.ref == 'refs/heads/prod'
+    if: github.ref == 'refs/heads/prod'   # Ensure this job runs when the prod branch is updated
  
     steps:
       # Step 1: Checkout Code
