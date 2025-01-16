@@ -63,8 +63,8 @@ jobs:
 
       - name: Merge to Prod Branch
         run: |
-          git config --global user.name "github-actions[bot]"
-          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git config --global user.name "Navateja-gogula"
+          git config --global user.email "ngogula@anergroup.com"
           git checkout prod
           git merge dev
           git push origin prod
