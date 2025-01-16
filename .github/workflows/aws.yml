@@ -8,35 +8,32 @@ on:
       - prod
 
 jobs:
-  # Job for building the app
-  build:
+  ci_cd_pipeline:
     runs-on: ubuntu-latest
     steps:
+      # Step 1: Checkout code
       - name: Checkout code
         uses: actions/checkout@v3
 
+      # Step 2: Set up Node.js
       - name: Set up Node.js
         uses: actions/setup-node@v3
         with:
           node-version: "16"
 
+      # Step 3: Install dependencies
       - name: Install dependencies
         run: npm install
 
+      # Step 4: Run tests
       - name: Run tests
         run: npm test -- --watchAll=false
 
+      # Step 5: Build React App
       - name: Build React App
         run: npm run build
 
-  # Job for deployment to AWS S3 and CloudFront
-  deploy:
-    needs: build
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
-
+      # Step 6: Configure AWS Credentials for deployment
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v3
         with:
@@ -44,44 +41,25 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: us-east-1
 
+      # Step 7: Deploy to AWS S3
       - name: Deploy to S3
         run: |
           aws s3 sync ./public s3://actions-aws --delete
 
-  # Job to promote code from dev to prod branch
-  promote-to-prod:
-    needs: deploy
-    runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/dev'
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
-
-      - name: Set up Git configuration
+      # Step 8: Promote to prod branch (only if pushed to dev)
+      - name: Promote to prod branch
+        if: github.ref == 'refs/heads/dev'
         run: |
           git config --global user.name "Navateja-gogula"
           git config --global user.email "ngogula@anergroup.com"
-
-      - name: Checkout prod branch
-        run: |
           git fetch origin
           git checkout prod
-
-      - name: Merge dev into prod
-        run: |
           git merge dev
-
-      - name: Push changes to prod branch
-        run: |
           git push origin prod
 
-  # Optionally notify upon successful deploy to prod (slack, email, etc.)
-  notify-prod-deploy:
-    needs: promote-to-prod
-    runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/prod'
-    steps:
+      # Step 9: Notify upon successful deployment (optional)
       - name: Notify on successful deployment
+        if: github.ref == 'refs/heads/prod'
         run: |
           echo "Deployment to production was successful!"
           # Example: send email or Slack notification here
