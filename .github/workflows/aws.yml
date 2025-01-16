@@ -78,4 +78,8 @@ jobs:
  
       # Step 3: Sync Build Directory to S3
       - name: Sync to S3
+<<<<<<< HEAD
         run: aws s3 sync ./public s3://actions-aws --delete
+=======
+        run: aws s3 sync ./build s3://actions-aws --delete
+>>>>>>> dev
