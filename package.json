@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "dependencies": {
+    "aws-sdk": "^2.1692.0",
     "cra-template": "1.2.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
@@ -15,7 +16,7 @@
     "test": "react-scripts test",
     "eject": "react-scripts eject",
     "predeploy": "npm run build",
-    "deploy": "gh-pages -d build -r https://$GITHUB_TOKEN@github.com/Navateja-gogula/Github-actions-Task.git"
+    "deploy": "npm run aws-deploy"
   },
   "eslintConfig": {
     "extends": [
@@ -41,5 +42,5 @@
     "@testing-library/react": "^16.1.0",
     "gh-pages": "^6.3.0"
   },
-  "homepage": "https://Navateja-gogula.github.io/Github-actions-Task"
+  "homepage": "http://actions-aws.s3-website-us-east-1.amazonaws.com"
 }
